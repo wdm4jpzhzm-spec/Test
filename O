@@ -1,0 +1,168 @@
+-- Nomme ce partie LocalScript
+-- Place-le dans StarterGui (Table: 'AnimeDice GUI')
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- 1. CONFIGURATION DU MENU
+local Name = "AnimeDice++"
+
+local localGUI = Instance.new("ScreenGui")
+local localGUI.Name = Name
+local localGUI.ResetOnToggle = false
+local localGUI.DisplayOrder = 1 -- Pour être au-dessus
+
+-- Couleurs et Tailles pour Mobile
+local Theme = {
+	Background = Color3.fromRGB(20, 20, 30),
+	TextColor = Color3.fromRGB(255, 255, 255),
+	BgColor = Color3.fromRGB(30, 30, 50),
+}
+
+-- 2. CREATION DES BOITIER (CONTAINERS)
+-- Un grand container servant de "Main Menu"
+local mainUI = Instance.new("Frame")
+mainUI.Name = "MainContainer"
+mainUI.Size = UDim2.new(0, 300, 0, 0) -- Largeur fixe
+mainUI.Position = UDim2.new(0.5, -150, 1, 0)
+mainUI.BackgroundColor3 = Theme.BgColor
+mainUI.BackgroundTransparency = 0.8
+mainUI.BorderSizePixel = 0
+mainUI.Parent = localGUI
+
+local Options = Instance.new("Folder")
+Options.Name = "Options"
+Options.Parent = mainUI
+
+local FrameObjects = {} -- Table pour organiser les frames facilement
+
+-- Fonction pour créer un cadre (Frame) avec nom
+function createFrame(name, size, img)
+	local f = Instance.new("Frame")
+	f.Position = UDim2.new(0, 0, 0, 10)
+	f.Size = size
+	f.BackgroundColor3 = img
+	f.BorderSizePixel = 0
+	f.Name = name
+	f.Parent = mainUI
+	
+	table.insert(FrameObjects, f)
+	
+	-- Centre le nom du bouton
+	-- (Optionnel, réglage automatice selon le style)
+	return f
+end
+
+createFrame("Container", UDim2.new(1, -10, 1, -10), UDim2.new(1, -20, 1, -20), Theme.BgColor)
+-- Simple tweak: aujourdhui on va simplifier pour garder la logique pro.
+
+local nBtn = createFrame("Name", UDim2.new(1, -20, 0, 40), Theme.BgColor)
+local nTxt = Instance.new("TextLabel")
+nTxt.Text = Name
+nTxt.TextSize = 22
+nTxt.TextColor3 = Theme.TextColor
+nTxt.TextStroke = TextStroke.new(2, Color3.fromRGB(255,255,255))	
+nTxt.Font = Enum.Font.GothamBold
+nTxt.BackgroundTransparency = 1
+nTxt.Size = UDim2.new(1, -10, 1, -10)
+nTxt.TextXAlignment = Enum.TextXAlignment.Left
+nTxt.TextYAlignment = Enum.TextYAlignment.Top
+nTxt.BorderSizePixel = 0
+nTxt.Parent = nBtn
+
+
+-- 3. AFFICHAGE DES OPTIONS (BOUTONS)
+
+local MakeBtn = createFrame("MakeBtn", UDim2.new(1, -20, 1, -80), UDim2.new(1, -15, 1, 0), Color3.fromRGB(80, 80, 80))
+local MakeTxt = Instance.new("TextLabel")
+MakeTxt.Text = "Add & Fake Items"
+MakeTxt.TextColor3 = Theme.TextColor
+MakeTxt.Font = Enum.Font.SourceSans
+MakeTxt.TextSize = 18
+MakeTxt.Size = UDim2.new(1, -10, 1, -10)
+MakeTxt.BackgroundTransparency = 0
+MakeTxt.Parent = MakeBtn
+
+local AcceptBtn = createFrame("AcceptBtn", UDim2.new(1, -20, 1, -80), UDim2.new(1, -20, 1, 50), Color3.fromRGB(50, 100, 150))
+local AccTxt = Instance.new("TextLabel")
+AccTxt.Text = "Auto Accept Trade"
+AccTxt.TextColor3 = Theme.TextColor
+AccTxt.Font = Enum.Font.SourceSans
+AccTxt.TextSize = 18
+AccTxt.Size = UDim2.new(1, -10, 1, -10)
+AccTxt.BackgroundTransparency = 0
+AccTxt.Parent = AcceptBtn
+
+
+-- 4. LA LOGIQUE MAGIQUE (Market & Fake Items)
+
+-- Table pour garder track des items ajoutés manuellement
+local realItems = {} 
+
+local freezeBtn = createFrame("FreezeBtn", UDim2.new(1, 0, 0.75, 50), UDim2.new(1, -20, 1, 60), UDim2.new(0, 0, 1, 0), Color3.fromRGB(50, 100, 150))
+local FreeTxt = Instance.new("TextLabel")
+FreeTxt.Text = "Market / Fake Items"
+FreeTxt.TextColor3 = Theme.TextColor
+FreeTxt.Font = Enum.Font.SourceSans
+FreeTxt.TextSize = 18
+FreeTxt.Size = UDim2.new(1, -10, 1, -10)
+FreeTxt.BackgroundTransparency = 0
+FreeTxt.Parent = freezeBtn
+
+
+-- Helper pour gérer l'affichage de l'inventaire fake
+local InventoryUI = Instance.new("ScrollingFrame")
+InventoryUI.Name = "FakeInv"
+InventoryUI.Size = UDim2.new(1, -10, 1, 140)
+InventoryUI.Position = UDim2.new(0, 20, 0, 60)
+InventoryUI.BackgroundTransparency = 1
+InventoryUI.ScrollBarThickness = 6
+InventoryUI.ScrollBarImageColor3 = Color3.fromRGB(255,255,255)
+InventoryUI.ScrollBarImageBackgroundColor3 = Color3.fromRGB(0,0,0)
+InventoryUI.Parent = mainUI
+
+
+local CreateFrame = Instance.new("Frame")
+CreateFrame.Size = UDim2.new(1, 0, 0, 55)
+CreateFrame.Position = UDim2.new(0, 0, 0, 20)
+CreateFrame.BackgroundColor3 = Theme.BgColor
+CreateFrame.Parent = InventoryUI
+CreateFrame.Name = "FrameContainer"
+CreateFrame.AutomaticSize = Enum.AutomaticSize
+
+
+local IdlVal = Instance.new("TextLabel")
+IdlVal.Name = "Val"
+IdlVal.Size = UDim2.new(1, 0, 1, 22)
+IdlVal.Position = UDim2.new(0, 20, 0, 10)
+IdlVal.TextColor3 = Theme.TextColor
+IdlVal.Font = Enum.Font.SourceSans
+IdlVal.Text = ""
+IdlVal.TextTruncate = true
+IdlVal.BackgroundTransparency = 1
+IdlVal.Parent = CreateFrame
+
+
+local NameVal = Instance.new("TextLabel")
+NameVal.Name = "Name"
+NameVal.Size = UDim2.new(1, -15, 1, 22)
+NameVal.Position = UDim2.new(1, -22, 0, 10)
+NameVal.TextColor3 = Theme.TextColor
+NameVal.Font = Enum.Font.SourceSans
+NameVal.Text = ""
+NameVal.TextTruncate = true
+NameVal.BackgroundTransparency = 1
+NameVal.Parent = CreateFrame
+
+-- Dummy Object pour save data
+local fakeItem = Instance.new("Model")
+fakeItem.Name = "MyFakeItem"
+fakeItem.Parent = game.Players.LocalPlayer.Character.Backpack
+
+
+-- LA FONCTION JETON (Pour refresh l'appearence)
+local function setBtnState(id, value, locked, i)
+	if not FrameObjects[id] then return end
+	
+	local Btn = FrameObjects[id]
+	
+	if value and
