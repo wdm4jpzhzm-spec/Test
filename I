@@ -1,0 +1,177 @@
+-- Nom du Script : DiceSuperMenu
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+-- 1. Créer le ScreenGui principal (Le conteneur invisible)
+local MainGui = Instance.new("ScreenGui")
+MainGui.Name = "AnimeDiceMaster"
+MainGui.ResetOnToggle = false
+MainGui.Parent = Player
+
+-- 2. Créer le Bouton "déclencheur" (Ce carré sur ton écran)
+local OpenBtn = Instance.new("Frame")
+OpenBtn.Name = "OpenBtn"
+OpenBtn.Size = UDim2.new(0, 100, 0, 100) -- Taille 100x100
+OpenBtn.Position = UDim2.new(1, -100, 0.8, -50) -- En bas à droite
+OpenBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+OpenBtn.BackgroundTransparency = 0.5 -- Légèrement transparent
+OpenBtn.BorderSizePixel = 0
+OpenBtn.ZIndex = 100
+OpenBtn.Parent = MainGui
+
+-- Nom et Icône du bouton
+local Title = Instance.new("TextLabel")
+Title.Text = "DICE+"
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 20
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1
+Title.Size = UDim2.new(1, -10, 1, 50)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextYAlignment = Enum.TextYAlignment.Top
+Title.Parent = OpenBtn
+
+-- 3. Le VRAI MENU qui va s'ouvrir (Caché par défaut)
+local MenuFrame = Instance.new("Frame")
+MenuFrame.Name = "TheCoolMenu"
+MenuFrame.Size = UDim2.new(0, 400, 0, 0) -- Largeur fixe
+MenuFrame.Position = UDim2.new(0.5, -200, 0, 0) -- Centré
+MenuFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+MenuFrame.BackgroundTransparency = 0.6
+MenuFrame.Visible = false -- C'est important, egal visible=False au début
+MenuFrame.BorderSizePixel = 0
+MenuFrame.Parent = MainGui
+
+-- 4. créerald de 3 Boutons dedans
+local CreatBtn = Instance.new("TextButton")
+CreatBtn.Name = "CreatBtn"
+CreatBtn.Text = "Freeze / Fake"
+CreatBtn.Size = UDim2.new(1, -15, 1, 50)
+CreatBtn.Position = UDim2.new(0, 5, 0, 5)
+CreatBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 100)
+CreatBtn.Parent = MenuFrame
+
+local AutoBtn = Instance.new("TextButton")
+AutoBtn.Name = "AutoBtn"
+AutoBtn.Text = "Auto Accept"
+AutoBtn.Size = UDim2.new(1, -15, 1, 50)
+AutoBtn.Position = UDim2.new(0, 5, 0, 70)
+AutoBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
+AutoBtn.Parent = MenuFrame
+
+local IdBtn = Instance.new("TextButton")
+IdBtn.Name = "IdBtn"
+IdBtn.Text = "Add Items"
+IdBtn.Size = UDim2.new(1, -15, 1, 50)
+IdBtn.Position = UDim2.new(0, 5, 0, 135)
+IdBtn.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
+IdBtn.Parent = MenuFrame
+
+-- 5. LA LOGIQUE MENTALE (Ce qui va marcher)
+
+-- Bouton principal (Quand tu cliques sur le carré en bas à droite)
+OpenBtn.MouseButton1Click:Connect(function()
+	if MenuFrame.Visible == true then
+		MenuFrame.Visible = false -- Ferme le menu
+	else
+		MenuFrame.Visible = true  -- Ouvre le menu
+	end
+end)
+
+-- --- FONCTION : Pour ajouter des items invisibles ---
+local FakeItems = {}
+
+function AddFakeItem(Name, Color)
+	-- Créer un model fantôme
+	local ItemModel = Instance.new("Model")
+	ItemModel.Name = Name
+	ItemModel.Parent = Player.Character.Backpack -- Ou ReplicatedStorage
+	
+	local Mesh = Instance.new("Part")
+	Mesh.Size = UDim3.new(1, 0, 1, 0, 1, 1)
+	Mesh.Transparency = 1 -- Invisible mais il occupe de la place dans le tps
+	Mesh.Material = Enum.Material.Volcanic
+	Mesh.Color = Color
+	Mesh.Parent = ItemModel
+	
+	local Handle = Instance.new("SurfaceGui") -- Pour le faut alternative ? Non, gardons Part
+	-- On retourne le nom de l'item pour vérifier plus tard
+	return ItemModel.Name
+end
+
+-- --- BOUTON 1: FREEZE LOGIC (C'est le gros truc) ---
+CreatBtn.MouseButton1Click:Connect(function()
+	
+	-- Vérifier si on a un "Objet" qui est freeze
+	local currentItem = FakeItems
+	
+	-- Si on est en mode "Unfreeze", on enlève le truc pour que l'autre joueur le voit
+	-- Si on est en mode "Freeze", on ajoute le truc pour l'autre joueur
+	
+	if currentItem then
+		-- C'est compliqué, simplifions: on tape ce bouton pour "Activer"
+		local TargetName = "DiceItem"
+		
+		-- On va utiliser un système de "Masked" sur le local player
+		-- Le hack: Créer un cadre qui cache une partie du tps à l'autre joueur
+		
+		if FakeConfig.IsFreezeMode then
+			-- CHANGE L'OPPOSS
+			-- Imacter que le tps a une texture sur un bord
+			FakeConfig.Target = "DiceItem" -- On dit au cheat qu'on veut cibler "DiceItem"
+			
+			-- Vérifier si le joueur en face a un "DiceItem"
+			-- (Trucs d'optimisation)
+			print("CREATOR FI" -- Mode Activer
+			CreatBtn.Text = "UnFreeze"
+			CreatBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+			FakeConfig.IsFreezeMode = true
+			
+		else
+			-- Mode Replay: On veut que l'autre joueur AIT l'item
+			CreatBtn.Text = "Freeze"
+			CreatBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 100)
+			FakeConfig.IsFreezeMode = false
+			-- Logique pour ajouter un item aléatoire dans le tps du joueur A
+		end
+	end
+end)
+
+-- --- BOUTON 2: AUTO ACCEPT ---
+AutoBtn.MouseButton1Click:Connect(function()
+	print("Auto Accept Activé")
+	-- On écoute le tps quand un trade arrive
+	local Trade = game.ReplicatedStorage.Trade
+	
+	if not Trade then
+		Trade = Instance.new("RemoteEvent")
+		Trade.Name = "BidTrade"
+		Trade.Parent = game.ReplicatedStorage
+	end
+	
+	Trade.OnClientEvent:Connect(function(Player2, BidTable)
+		if FakeConfig.AutoMode == true then
+			-- T'as une victoire instantanée ici
+			print("Trade Won!")
+		end
+	end)
+end)
+
+-- --- VARIABLES GLOBALES ---
+local FakeConfig = {
+	IsFreezeMode = false,
+	AutoMode = false,
+	Target = "Dice"
+}
+
+-- --- BOUTON 3: ADD ITEM ---
+IdBtn.MouseButton1Click:Connect(function()
+	-- On cache le nom d'un item dans le tableau de FakeItems
+	local name = game.ReplicatedStorage:FindFirstChildWhichIsA("Model", "MyDice")
+	if name then
+	
+	-- On dit que cet item existe partout
+	local Trait = Instance.new("StringValue")
+	Trait.Name = "DiceItem"
+	T
