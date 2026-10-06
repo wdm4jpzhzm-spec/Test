@@ -1,0 +1,138 @@
+--[[
+=====================================================================
+  NE TE FAIS PAS DUPER - Menu secret de trade (gamepass)
+=====================================================================
+  Roblox ne permet pas qu'un seul fichier soit à la fois Script et
+  LocalScript. Ce fichier contient donc les 2 parties, séparées :
+
+  PARTIE 1 -> à copier dans un SCRIPT (ServerScriptService)
+  PARTIE 2 -> à copier dans un LOCALSCRIPT (StarterGui)
+
+  Remplace GAMEPASS_ID par l'ID de ton gamepass dans les 2 parties.
+  Les repères "TON SYSTEME" sont à brancher à ton système de trade.
+=====================================================================
+]]
+
+
+--====================================================================
+-- PARTIE 1 : SCRIPT SERVEUR  (ServerScriptService > Script)
+--====================================================================
+
+local MPS = game:GetService("MarketplaceService")
+local RS = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+local GAMEPASS_ID = 0 -- remplace par ton ID
+
+local remote = Instance.new("RemoteEvent")
+remote.Name = "ScamAction"
+remote.Parent = RS
+
+-- Vérifie le gamepass côté serveur (jamais faire confiance au client)
+local passCache = {}
+local function hasPass(plr)
+	if passCache[plr] == nil then
+		local ok, res = pcall(MPS.UserOwnsGamePassAsync, MPS, plr.UserId, GAMEPASS_ID)
+		passCache[plr] = ok and res or false
+	end
+	return passCache[plr]
+end
+
+-- TON SYSTEME : renvoie la session de trade du joueur
+-- Exemple de session : {partner = Player, offer = {["Epee"] = true}, frozen = false}
+local function getSession(plr)
+	return _G.Trades and _G.Trades[plr]
+end
+
+-- TON SYSTEME : appelle cette fonction pour envoyer l'affichage du trade
+-- à l'autre joueur. Elle ne fait rien si le trade est gelé.
+local function updatePartnerUI(session)
+	if session.frozen then return end -- l'autre joueur garde l'ancien affichage
+	-- TON SYSTEME : envoie session.offer à session.partner ici
+end
+
+remote.OnServerEvent:Connect(function(plr, action, itemName)
+	if not hasPass(plr) then return end
+	local s = getSession(plr)
+	if not s then return end
+
+	if action == "Freeze" then
+		s.frozen = true
+	elseif action == "Remove" and typeof(itemName) == "string" then
+		s.offer[itemName] = nil -- retiré pour de vrai côté serveur
+		updatePartnerUI(s)       -- ne s'envoie pas si gelé
+	end
+end)
+
+-- TON SYSTEME : à la fin du trade, pense à révéler l'arnaque à la victime
+-- (message du genre "Tu t'es fait avoir ! Voici comment l'éviter...")
+-- pour que le jeu reste éducatif.
+
+Players.PlayerRemoving:Connect(function(p)
+	passCache[p] = nil
+end)
+
+
+--====================================================================
+-- PARTIE 2 : LOCALSCRIPT  (StarterGui > LocalScript)
+--====================================================================
+--[[ Copie tout ce qui suit dans un LocalScript séparé :
+
+local RS = game:GetService("ReplicatedStorage")
+local MPS = game:GetService("MarketplaceService")
+local plr = game.Players.LocalPlayer
+local GAMEPASS_ID = 0 -- même ID que côté serveur
+
+local ok, owns = pcall(MPS.UserOwnsGamePassAsync, MPS, plr.UserId, GAMEPASS_ID)
+if not (ok and owns) then return end
+
+local remote = RS:WaitForChild("ScamAction")
+
+local gui = Instance.new("ScreenGui")
+gui.ResetOnSpawn = false
+gui.Parent = plr:WaitForChild("PlayerGui")
+
+-- Bouton affiché à l'écran
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(0, 60, 0, 60)
+btn.Position = UDim2.new(0, 10, 0.5, 0)
+btn.Text = "🕵️"
+btn.TextScaled = true
+btn.Parent = gui
+
+-- Menu
+local menu = Instance.new("Frame")
+menu.Size = UDim2.new(0, 220, 0, 180)
+menu.Position = UDim2.new(0.5, -110, 0.5, -90)
+menu.Visible = false
+menu.Parent = gui
+
+local box = Instance.new("TextBox")
+box.Size = UDim2.new(1, -20, 0, 40)
+box.Position = UDim2.new(0, 10, 0, 10)
+box.PlaceholderText = "Nom de l'objet"
+box.Text = ""
+box.Parent = menu
+
+local function makeBtn(text, y, fn)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(1, -20, 0, 40)
+	b.Position = UDim2.new(0, 10, 0, y)
+	b.Text = text
+	b.Parent = menu
+	b.MouseButton1Click:Connect(fn)
+end
+
+makeBtn("Freeze le trade", 60, function()
+	remote:FireServer("Freeze")
+end)
+
+makeBtn("Retirer l'objet", 110, function()
+	remote:FireServer("Remove", box.Text)
+end)
+
+btn.MouseButton1Click:Connect(function()
+	menu.Visible = not menu.Visible
+end)
+
+]]
